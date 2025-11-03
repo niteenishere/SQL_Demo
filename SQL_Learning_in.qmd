@@ -75,14 +75,16 @@ select mpg, hp, gear from mtcars where hp > 200 and gear = 3;
 
 ```{sql, connection = con}
 
-select mpg, hp, gear, cyl from mtcars order by mpg desc; 
+select mpg, hp, gear, cyl from mtcars 
+order by mpg desc; 
 ```
 
 Sorting by multiple columns
 
 ```{sql , connection=con}
 
-select Species , `Sepal.Length`, `Petal.Length` from iris order by Species ASC ,`Petal.Length` DESC;
+select Species , `Sepal.Length`, `Petal.Length` from iris 
+order by Species ASC ,`Petal.Length` DESC;
 
 
 ```
@@ -91,7 +93,9 @@ select Species , `Sepal.Length`, `Petal.Length` from iris order by Species ASC ,
 
 ```{sql, connection = con}
 
-select * from iris where Species = "versicolor"or species="setosa" and 'Sepal.Length' > 5.9;
+select * from iris 
+where Species = "versicolor"or species="setosa" 
+and 'Sepal.Length' > 5.9;
 
 ```
 
@@ -101,7 +105,8 @@ try to find all 6-cylinder cars and horsepower less than 120 sorted my mpg from 
 
 ```{sql, connection=con}
 
-select * from mtcars where cyl = 6 and hp < 120 order by mpg desc;
+select * from mtcars
+where cyl = 6 and hp < 120 order by mpg desc;
 
 ```
 
@@ -120,7 +125,8 @@ select count(*) as total_cars from mtcars;
 
 ```{sql , connection=con}
 
-select count(Species) as versicolor_setosa_species from iris where Species = 'versicolor' or species = 'setosa';
+select count(Species) as versicolor_setosa_species from iris 
+where Species = 'versicolor' or species = 'setosa';
 
 ```
 
@@ -128,7 +134,8 @@ Let's find the average horsepower across all cars.
 
 ```{sql , connection = con}
 
-select avg(hp) as average_horsepower_with_hp_more_than_150 from mtcars where hp > 150 and gear > 4;
+select avg(hp) as average_horsepower_with_hp_more_than_150 from mtcars 
+where hp > 150 and gear > 4;
 
 ```
 
@@ -178,7 +185,8 @@ having avg(mpg) > 20;
 
 ```{sql , connection=con}
 
-select Species, variance('Sepal.Width') as var_Sepal_Length , count(*) as num_of_flowers from iris group by Species; 
+select Species, variance('Sepal.Width') as var_Sepal_Length , count(*) as num_of_flowers from iris 
+group by Species; 
 #|Species having avg('Sepal.Length') > 4;
 
 ```
@@ -219,7 +227,8 @@ orders_df;customers_df
 ```{sql , connection=con}
 
 
-select T1.name, T1.email, T2.product, T2.amount from Customer as T1 Inner join Orders as T2 on T1.customer_id = T2.customer_id;
+select T1.name, T1.email, T2.product, T2.amount from Customer as T1 
+Inner join Orders as T2 on T1.customer_id = T2.customer_id;
 
 ```
 
@@ -239,7 +248,8 @@ left join Orders as O on C.customer_id = O.customer_id;
 
 ```{sql , connection=con}
 
-select C.name , O.amount from Customer as C Left join Orders as O on C.customer_id = O.customer_id where amount is null;
+select C.name , O.amount from Customer as C 
+Left join Orders as O on C.customer_id = O.customer_id where amount is null;
 
 ```
 
@@ -265,7 +275,10 @@ update Customer SET email ="john@email.com" where customer_id = 103;
 
 ```{sql ,connection=con}
 
-update Customer set email=case customer_id when 101 then "Alice.2001@gmail.com" when 102 then "Bob.2002@gmail.com" else email -- this keep all other emails remain unchanged
+update Customer set email=case customer_id 
+when 101 then "Alice.2001@gmail.com" 
+when 102 then "Bob.2002@gmail.com" 
+else email -- this keep all other emails remain unchanged
 end  where customer_id in (101,102);
 
 ```
@@ -389,3 +402,4 @@ where employee_id in (1,2,3,5,7);
 select * from Employees;
 
 ```
+
