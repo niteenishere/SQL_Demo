@@ -1,0 +1,391 @@
+---
+title: "SQL_Demo"
+author: "MR.Pardeshi"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## SQL_Module 1
+
+```{r}
+library(DBI)
+library(RSQLite)
+```
+
+2.  Set up **Connection** in {r} Chunk
+
+```{r}
+#| echo: false
+db_path="E:\\datasets for programming\\Database_1.sqlite"
+con =dbConnect(RSQLite::SQLite(),db_path)
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+There is a crucial step before we get started currently our Database_1 is currently empty we need to fill the database with required datasets to perform SQL queries.
+
+```{r}
+library(ISLR2)
+data("iris")
+data("mtcars")
+dbWriteTable(con,"mtcars",mtcars,overwrite =TRUE)
+dbWriteTable(con,"iris",iris,overwrite=TRUE)
+dbListTables(con)
+```
+
+## 1. The Basics of SELECT and WHERE
+
+```{sql ,connection=con}
+#| the most basic query is show me everything
+SELECT * from mtcars;
+
+```
+
+```{sql ,connection=con}
+
+select mpg, qsec, gear from mtcars;
+
+```
+
+```{sql ,connection=con}
+
+#| Filtering rows with WHERE
+
+select *  from iris where species= "versicolor";
+
+```
+
+```{sql ,connection=con}
+
+#| filtering on numbers
+
+#| we want the model mpg and hp for with more than 200 hp.
+
+select mpg, hp, gear from mtcars where hp > 200 and gear = 3;
+```
+
+## SQL_Module 2
+
+## **Sorting Results** (ORDERED BY) and Combining Filters (AND/ OR)
+
+```{sql, connection = con}
+
+select mpg, hp, gear, cyl from mtcars order by mpg desc; 
+```
+
+Sorting by multiple columns
+
+```{sql , connection=con}
+
+select Species , `Sepal.Length`, `Petal.Length` from iris order by Species ASC ,`Petal.Length` DESC;
+
+
+```
+
+## Combining files with (AND/OR)
+
+```{sql, connection = con}
+
+select * from iris where Species = "versicolor"or species="setosa" and 'Sepal.Length' > 5.9;
+
+```
+
+## Challenge :
+
+try to find all 6-cylinder cars and horsepower less than 120 sorted my mpg from highest to lowest.
+
+```{sql, connection=con}
+
+select * from mtcars where cyl = 6 and hp < 120 order by mpg desc;
+
+```
+
+## Module 3
+
+## Aggregates ( COUNT, AVG, SUM) and (GROUP_BY)
+
+```{sql, connection=con}
+
+#| How many cars are in the mtcars table ?
+
+select count(*) as total_cars from mtcars;
+
+
+```
+
+```{sql , connection=con}
+
+select count(Species) as versicolor_setosa_species from iris where Species = 'versicolor' or species = 'setosa';
+
+```
+
+Let's find the average horsepower across all cars.
+
+```{sql , connection = con}
+
+select avg(hp) as average_horsepower_with_hp_more_than_150 from mtcars where hp > 150 and gear > 4;
+
+```
+
+"**What is the average horsepower for each cylinder type?**"
+
+```{sql , connection=con}
+
+select cyl, avg(hp) as average_horsepower,
+count(*) as num_cars_in_group from mtcars group by cyl;
+
+```
+
+```{sql , connection=con}
+
+select gear, avg(mpg) as average_milege, 
+count(*) as num_cars_in_group from mtcars group by gear;
+
+```
+
+```{sql , connection=con}
+
+select Species, avg(`Sepal.Length`) as average_sepal_length,
+count(*) as num_of_flowers from iris group by Species;
+
+```
+
+## Filtered using grouped results
+
+## Module 4 : Filtering Groups with \[HAVING\]
+
+```{sql , connection=con}
+
+#| WHERE filter rows before they are grouped.
+#| HAVING filter rows after they are grouped
+
+select cyl, avg(hp) as Average_hp, count(*) as num_cars_in_group from mtcars group by cyl;
+
+#| This query shows us the average HP for all groups. But what if we only wanted to see groups where the average HP is greater than 150?
+```
+
+```{sql , connection=con}
+
+select gear, avg(mpg) as Average_mpg, count(*) as num_of_cars from mtcars group by gear 
+having avg(mpg) > 20;
+
+```
+
+```{sql , connection=con}
+
+select Species, variance('Sepal.Width') as var_Sepal_Length , count(*) as num_of_flowers from iris group by Species; 
+#|Species having avg('Sepal.Length') > 4;
+
+```
+
+## Module 5: Combining Tables with \[JOIN\]
+
+**JOIN** is the command use to combine rows from two or based on common related column different tables.
+
+our database have iris and mtcars data set both are different data sets we need to create 2 data tables having common column inside them
+
+```{r}
+
+#| Create 'Customers' table
+
+customers_df = data.frame(customer_id = c(101,102,103,104),
+                          name = c('Alice','Bob','John','David'),
+                          email = c("alice@email.com", "bob@email.com", "charlie@email.com", "david@email.com"))
+
+dbWriteTable(con,'Customer',customers_df,overwrite=TRUE)
+
+#| Create 'Orders' Table
+
+orders_df = data.frame(order_id = c(1,2,3,4,5,6),
+                       customer_id =c(101,102,103,101,105,102),
+                       product = c('Laptop','Mouse','Keyboard','Colling Pad','Laptop Lenovo','Pen Drive'),
+                       amount=c(39000,1530,2598,4000,45000,1240))
+dbWriteTable(con,'Orders',orders_df,overwrite=TRUE)
+
+cat("New tables created in Database:","\n")
+dbListTables(con)
+orders_df;customers_df
+```
+
+## The INNER JOIN
+
+**INNER JOIN** : Only Keeps rows that have a match in both tables.
+
+```{sql , connection=con}
+
+
+select T1.name, T1.email, T2.product, T2.amount from Customer as T1 Inner join Orders as T2 on T1.customer_id = T2.customer_id;
+
+```
+
+Note that customer with name David is not included in the inner joining because customer_id 104 not found common in both data tables.
+
+## The LEFT JOIN
+
+**LEFT JOIN** : Only Keeps rows from the "left" table and then adds the matching data from the "right" table.
+
+```{sql,connection = con}
+
+select C.name , C.customer_id, C.email, O.amount from Customer as C -- This is "Left" table
+left join Orders as O on C.customer_id = O.customer_id;
+
+
+```
+
+```{sql , connection=con}
+
+select C.name , O.amount from Customer as C Left join Orders as O on C.customer_id = O.customer_id where amount is null;
+
+```
+
+## Module 6: Modifying Data with \[UPDATE\]
+
+The **UPDATE** command is used to modify existing rows in a table.
+
+-   **SET** **:** to specify which column to change and what its new value should be.
+
+-   **WHERE** **:** to specify for which rows to change
+
+    Let's say **"John" (**customer_id = 103 **)** has wrongly spelled his email_id. we need to update his record in **Customer** table.
+
+```{sql, connection=con}
+
+-- update the email column in Customer table
+
+update Customer SET email ="john@email.com" where customer_id = 103;
+
+```
+
+**The Advanced Way**
+
+```{sql ,connection=con}
+
+update Customer set email=case customer_id when 101 then "Alice.2001@gmail.com" when 102 then "Bob.2002@gmail.com" else email -- this keep all other emails remain unchanged
+end  where customer_id in (101,102);
+
+```
+
+```{sql , connection=con}
+
+-- update Customer table 
+
+select * from Customer;
+
+```
+
+## MOdule 7: Deleting Data with \[DELETE\]
+
+The **DELETE** remove entire rows from a table.
+
+-   Example : Remove a customer name **"David" with customer_id = 104.**
+
+```{sql , connection=con}
+
+delete from Orders where customer_id = 105;
+
+
+```
+
+```{sql , connection=con}
+
+select * from Orders;
+
+```
+
+## Module 8: Managing Tables (CREATE, ALTER,DROP)
+
+So far, we've used **dbWriteTable()** in R to automatically create tables for us. But in SQL, we can create tables manually.
+
+## CREATE TABLE
+
+Common **data types** in **SQLite:**
+
+-   **INTEGER:** for whole numbers
+
+-   **REAL :** for decimal numbers
+
+-   **TEXT :** for strings
+
+-   **BLOB :** fro storing raw data
+
+```{sql , connection=con}
+
+-- Creating new table to store employee info
+#| drop table Employees;
+
+create table Employees( employee_id integer primary key ,
+                       first_name text,
+                       last_name text,
+                       joining_date text,
+                       salary real);
+
+```
+
+Add Data with **INSERT INTO**
+
+```{sql,connection=con}
+
+insert into Employees (employee_id,first_name,last_name,joining_date,salary)
+values
+(1,'Rahul','Patil','2024-05-09',45000),
+(2,'Vinay','Bharambe','2025-25-11',55000),
+(3,'Rudrakumar','Shekhawat','2025-08-30',79000),
+(5,'Niteenkumar','Pardeshi','2026-05-14',80000),
+(7,'Vivek','Patil','2026-04-10',105000);
+
+```
+
+```{sql ,connection=con}
+
+select * from employees;
+
+```
+
+What if you create a table and then realize you forgot a column? `ALTER TABLE` lets you modify an existing table's structure. The most common use is to add a new column.
+
+## ALTER TABLE 
+
+Add new column 'email' of type **TEXT** to Employees data
+
+```{sql ,connection=con}
+
+alter table Employees 
+ADD COLUMN email text;
+
+
+```
+
+```{sql ,connection=con}
+
+select * from Employees
+
+-- alter table Employees rename COLUMN  column to email; 
+
+```
+
+```{}
+```
+
+```{sql , connection=con}
+
+update Employees set email  = case employee_id
+when 1 then 'rahul@gmail.com'
+when 2 then 'vinay@gmail.com'
+when 3 then 'rudrakumar@gmail.com'
+when 5 then 'niteenkumar@gmail.com'
+when 7 then 'vivek@gmail.com'
+else email end
+where employee_id in (1,2,3,5,7);
+
+```
+
+```{sql , connection = con}
+
+select * from Employees;
+
+```
